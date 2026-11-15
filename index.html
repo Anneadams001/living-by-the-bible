@@ -88,6 +88,13 @@ ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
 a{color:var(--accent)}
 body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px}
+.verse q.go{cursor:pointer}
+.verse q.go:hover{text-decoration:underline;text-decoration-color:var(--gold);text-underline-offset:4px}
+.rd-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:8px 0 4px}
+.rd-nav{display:flex;gap:8px;margin:20px 0}
+.rd p{font-family:var(--font-verse);font-size:20px;line-height:1.6;max-width:65ch;margin:0 0 10px;padding:4px 10px;border-left:4px solid transparent;border-radius:4px}
+.rd p sup{font-family:var(--font-ui);font-size:12px;color:var(--muted);margin-right:6px;font-weight:700}
+.rd p.hl{background:var(--accent-soft);border-left-color:var(--gold)}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 </style>
 </head>
@@ -150,7 +157,7 @@ var BASE = [
  verses:[['Ephesians 4:31-32','Let all bitterness, and wrath, and anger, and clamour, and evil speaking, be put away from you, with all malice: And be ye kind one to another, tenderhearted, forgiving one another, even as God for Christ\'s sake hath forgiven you.'],
  ['Colossians 3:13','Forbearing one another, and forgiving one another, if any man have a quarrel against any: even as Christ forgave you, so also do ye.'],
  ['Matthew 6:14-15','For if ye forgive men their trespasses, your heavenly Father will also forgive you: But if ye forgive not men their trespasses, neither will your Father forgive your trespasses.'],
- ['Hebrews 12:15','Looking diligently lest any man fail of the grace of God; lest any root of bitterness springing up trouble you, and thereby defile many;'],
+ ['Hebrews 12:15','Looking diligently lest any man fail of the grace of God; lest any root of bitterness springing up trouble you, and thereby many be defiled;'],
  ['Luke 6:27-28','But I say unto you which hear, Love your enemies, do good to them which hate you, Bless them that curse you, and pray for them which despitefully use you.']]},
 {id:'conflict',title:'Conflict and difficult people',when:'You have a disagreement or someone is hard to deal with.',kw:'argument coworker family fight enemy peace',
  steps:['Go to the person privately first (Matthew 18:15).','Do your part to live at peace (Romans 12:18).','Respond with good, not with evil.','Speak with grace.'],
@@ -303,6 +310,25 @@ function copyText(txt){
   try { navigator.clipboard.writeText(txt).then(function(){toast('Copied');},function(){toast('Press and hold the text to copy');}); ok=true; } catch(e){}
   if(!ok) toast('Press and hold the text to copy');
 }
+var BIBLE = null, BIDX = {}, BERR = false;
+function slug(n){ return n.toLowerCase().replace(/ /g,'-'); }
+function loadBible(){
+  fetch('kjv.json').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+    BIBLE = d; d.forEach(function(b){ BIDX[b[0].toLowerCase()] = b; BIDX[slug(b[0])] = b; });
+    BIDX['psalm'] = BIDX['psalms']; BIDX['song of songs'] = BIDX['song of solomon'];
+    route();
+  }).catch(function(){ BERR = true; if(location.hash.indexOf('#read-')===0) route(); });
+}
+function parseRef(ref){
+  if(!BIBLE) return null;
+  var m = String(ref).trim().match(/^(.+?)\s+(\d+):(\d+)(?:\s*[-\u2013]\s*(\d+))?/);
+  if(!m) return null;
+  var b = BIDX[m[1].toLowerCase()]; var ch = +m[2];
+  if(!b || ch<1 || ch>b[1].length) return null;
+  var a = +m[3], z = +(m[4]||m[3]); if(z<a) z=a;
+  return {b:b, ch:ch, a:a, z:z};
+}
+function readHash(r){ return 'read-'+slug(r.b[0])+'-'+r.ch+'-'+r.a+'-'+r.z; }
 var app = document.getElementById('app');
 var query = '';
 
@@ -339,7 +365,10 @@ function home(){
 
 function verseHTML(sid,v){
   var id = vid(sid,v[0]); var fav = store.favs.indexOf(id)>-1;
-  return '<div class="verse"><q>'+esc(v[1])+'</q><div class="ref"><b>'+esc(v[0])+' KJV</b><span class="row"><button class="mini" data-fav="'+esc(id)+'" aria-pressed="'+fav+'">'+(fav?'Saved':'Save')+'</button><button class="mini" data-copy="'+esc(v[0]+' — '+v[1])+'">Copy</button></span></div></div>';
+  var pr = parseRef(v[0]);
+  var q = pr ? '<q class="go" role="link" tabindex="0" data-read="'+readHash(pr)+'" title="Read the whole chapter">'+esc(v[1])+'</q>' : '<q>'+esc(v[1])+'</q>';
+  var rb = pr ? '<button class="mini" data-read="'+readHash(pr)+'">Read chapter</button>' : '';
+  return '<div class="verse">'+q+'<div class="ref"><b>'+esc(v[0])+' KJV</b><span class="row">'+rb+'<button class="mini" data-fav="'+esc(id)+'" aria-pressed="'+fav+'">'+(fav?'Saved':'Save')+'</button><button class="mini" data-copy="'+esc(v[0]+' — '+v[1])+'">Copy</button></span></div></div>';
 }
 
 function detail(s){
@@ -390,6 +419,28 @@ function thoughtCheck(){
   });
 }
 
+var navs = 0;
+function chapterHash(b,ch){ return 'read-'+slug(b[0])+'-'+ch+'-0-0'; }
+function reader(slugName,ch,a,z){
+  setTabs('');
+  if(!BIBLE){ app.innerHTML = '<button class="back" id="back">← Back</button><p class="empty">'+(BERR?'The chapter text could not be loaded. Check your connection and try again.':'Loading the chapter…')+'</p>'; document.getElementById('back').addEventListener('click', goBack); return; }
+  var b = BIDX[slugName];
+  if(!b || ch<1 || ch>b[1].length){ location.hash=''; return; }
+  var idx = BIBLE.indexOf(b), prev=null, next=null;
+  if(ch>1) prev = chapterHash(b,ch-1); else if(idx>0){ var pb=BIBLE[idx-1]; prev = chapterHash(pb,pb[1].length); }
+  if(ch<b[1].length) next = chapterHash(b,ch+1); else if(idx<BIBLE.length-1) next = chapterHash(BIBLE[idx+1],1);
+  var h = '<div class="rd"><button class="back" id="back">← Back</button><div class="rd-head"><h2>'+esc(b[0])+' '+ch+'</h2><span class="row"><button class="mini" id="copych">Copy chapter</button></span></div><p class="hint" style="padding:0">King James Version'+(a?'. The verse you chose is highlighted.':'.')+'</p>';
+  b[1][ch-1].forEach(function(t,i){ var n=i+1, on = a && n>=a && n<=z; h += '<p'+(on?' class="hl" id="hl'+(n===a?'-first':'')+'"':'')+'><sup>'+n+'</sup>'+esc(t)+'</p>'; });
+  h += '<div class="rd-nav">'+(prev?'<button class="mini" data-go="'+prev+'">← Previous chapter</button>':'')+(next?'<button class="mini" data-go="'+next+'">Next chapter →</button>':'')+'</div></div>';
+  app.innerHTML = h;
+  document.getElementById('back').addEventListener('click', goBack);
+  document.getElementById('copych').addEventListener('click', function(){ copyText(b[0]+' '+ch+' (KJV)\n'+b[1][ch-1].map(function(t,i){return (i+1)+' '+t;}).join('\n')); });
+  var f = document.getElementById('hl-first');
+  if(f){ try{ f.scrollIntoView({block:'center'}); }catch(e){ window.scrollTo(0,0);} } else window.scrollTo(0,0);
+}
+var lastNonRead = '';
+function goBack(){ location.hash = lastNonRead; }
+
 function favs(){
   setTabs('favs');
   var h = '<h2>Saved verses</h2>';
@@ -416,24 +467,30 @@ function setTabs(w){
 /* ---------- Events and routing ---------- */
 app.addEventListener('click', function(e){
   var g = e.target.closest('[data-go]'); if(g){ location.hash = g.dataset.go; return; }
+  var rd = e.target.closest('[data-read]'); if(rd){ location.hash = rd.dataset.read; return; }
   var f = e.target.closest('[data-fav]');
   if(f){ var id=f.dataset.fav, i=store.favs.indexOf(id); if(i>-1) store.favs.splice(i,1); else store.favs.push(id); save();
     var on = store.favs.indexOf(id)>-1; f.setAttribute('aria-pressed',on); f.textContent = on?'Saved':'Save';
     if(location.hash==='#saved' && !on) favs(); return; }
   var c = e.target.closest('[data-copy]'); if(c){ copyText(c.dataset.copy); }
 });
+app.addEventListener('keydown', function(e){ if((e.key==='Enter'||e.key===' ') && e.target.matches && e.target.matches('q.go')){ e.preventDefault(); location.hash = e.target.dataset.read; } });
 document.getElementById('tab-home').addEventListener('click', function(){ location.hash=''; route(); });
 document.getElementById('tab-favs').addEventListener('click', function(){ location.hash='saved'; });
 
 function route(){
   var h = location.hash.replace('#','');
+  var rm = h.match(/^read-(.+)-(\d+)-(\d+)-(\d+)$/);
+  if(!rm) lastNonRead = location.hash.replace('#','');
+  if(rm) return reader(rm[1],+rm[2],+rm[3],+rm[4]);
   if(h==='saved') return favs();
   var s = h && byId(h);
   if(s) return detail(s);
   home();
 }
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', function(){ navs++; route(); });
 route();
+loadBible();
 if ('serviceWorker' in navigator && location.protocol.indexOf('http')===0) { window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
 </script>
 </body>
