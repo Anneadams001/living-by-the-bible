@@ -46,7 +46,8 @@ body{padding:0 16px 64px}
 header{padding:28px 0 12px;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between}
 h1{font-family:var(--font-verse);font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em;text-wrap:balance}
 .tag{color:var(--muted);font-size:14px;margin:4px 0 0}
-nav{display:flex;gap:8px}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+select.tab{background:var(--surface);appearance:auto}
 button,.btn{font:inherit;cursor:pointer}
 .tab{background:none;border:1px solid var(--line);color:var(--ink);padding:6px 12px;border-radius:999px;font-size:14px}
 .tab[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
@@ -109,10 +110,11 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
     <nav aria-label="Views">
       <button class="tab" id="tab-home" aria-pressed="true">Situations</button>
       <button class="tab" id="tab-favs" aria-pressed="false">Saved verses</button>
+      <select class="tab" id="tr" aria-label="Bible translation"><option value="kjv">KJV</option><option value="web">WEB</option></select>
     </nav>
   </header>
   <main id="app"></main>
-  <p class="footer">Scripture from the King James Version (public domain). Saved verses and your additions stay on this device only; nothing is sent anywhere. The "Do this" steps are short reminders written to go with the verses. They are not a substitute for reading the Bible, for church, or for counsel from a pastor or counselor. Part of the SHE Series at <a href="https://sheinherits.com" target="_blank" rel="noopener">sheinherits.com</a>. To install on your phone: open this page in your browser, then choose Add to Home Screen.</p>
+  <p class="footer">Scripture is from the King James Version (KJV) and the World English Bible (WEB), both in the public domain. The WEB uses Yahweh where the KJV has LORD. Saved verses and your additions stay on this device only; nothing is sent anywhere. The "Do this" steps are short reminders written to go with the verses. They are not a substitute for reading the Bible, for church, or for counsel from a pastor or counselor. Part of the SHE Series at <a href="https://sheinherits.com" target="_blank" rel="noopener">sheinherits.com</a>. To install on your phone: open this page in your browser, then choose Add to Home Screen.</p>
 </div>
 <script>
 /* ---------- Content ---------- */
@@ -294,8 +296,8 @@ var BASE = [
 var P48 = ['Is it true?','Is it honest and honorable?','Is it just and right?','Is it pure?','Is it lovely?','Is it of good report?'];
 
 /* ---------- Storage (this browser only) ---------- */
-var store = {favs:[], cv:{}, cs:[]};
-try { var raw = localStorage.getItem('lbb-v1'); if (raw) { var o = JSON.parse(raw); store.favs = o.favs||[]; store.cv = o.cv||{}; store.cs = o.cs||[]; } } catch(e){}
+var store = {favs:[], cv:{}, cs:[], tr:'kjv'};
+try { var raw = localStorage.getItem('lbb-v1'); if (raw) { var o = JSON.parse(raw); store.favs = o.favs||[]; store.cv = o.cv||{}; store.cs = o.cs||[]; store.tr = o.tr||'kjv'; } } catch(e){}
 function save(){ try { localStorage.setItem('lbb-v1', JSON.stringify(store)); } catch(e){} }
 
 /* ---------- Helpers ---------- */
@@ -310,14 +312,24 @@ function copyText(txt){
   try { navigator.clipboard.writeText(txt).then(function(){toast('Copied');},function(){toast('Press and hold the text to copy');}); ok=true; } catch(e){}
   if(!ok) toast('Press and hold the text to copy');
 }
-var BIBLE = null, BIDX = {}, BERR = false;
+var BIBLE = null, BIDX = {}, BERR = false, applied = 'kjv';
+var TRS = {kjv:{file:'kjv.json',name:'King James Version',abbr:'KJV',data:null}, web:{file:'web.json',name:'World English Bible',abbr:'WEB',data:null}};
+var tr = TRS[store.tr] ? store.tr : 'kjv';
 function slug(n){ return n.toLowerCase().replace(/ /g,'-'); }
+function applyTr(key){
+  var d = TRS[key].data; BIBLE = d; BIDX = {}; applied = key;
+  d.forEach(function(b){ BIDX[b[0].toLowerCase()] = b; BIDX[slug(b[0])] = b; });
+  BIDX['psalm'] = BIDX['psalms']; BIDX['song of songs'] = BIDX['song of solomon'];
+}
 function loadBible(){
-  fetch('kjv.json').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
-    BIBLE = d; d.forEach(function(b){ BIDX[b[0].toLowerCase()] = b; BIDX[slug(b[0])] = b; });
-    BIDX['psalm'] = BIDX['psalms']; BIDX['song of songs'] = BIDX['song of solomon'];
-    route();
-  }).catch(function(){ BERR = true; if(location.hash.indexOf('#read-')===0) route(); });
+  var key = tr, t = TRS[key];
+  if(t.data){ applyTr(key); route(); return; }
+  fetch(t.file).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
+    t.data = d; if(key===tr){ BERR=false; applyTr(key); route(); }
+  }).catch(function(){ if(key===tr){ BERR = true; if(!BIBLE && location.hash.indexOf('#read-')===0) route(); } });
+}
+function setTr(key){
+  tr = key; store.tr = key; save(); BERR = false; loadBible();
 }
 function parseRef(ref){
   if(!BIBLE) return null;
@@ -366,9 +378,12 @@ function home(){
 function verseHTML(sid,v){
   var id = vid(sid,v[0]); var fav = store.favs.indexOf(id)>-1;
   var pr = parseRef(v[0]);
-  var q = pr ? '<q class="go" role="link" tabindex="0" data-read="'+readHash(pr)+'" title="Read the whole chapter">'+esc(v[1])+'</q>' : '<q>'+esc(v[1])+'</q>';
+  var vt = v[1];
+  if(!v[2] && applied!=='kjv' && pr){ vt = pr.b[1][pr.ch-1].slice(pr.a-1,pr.z).filter(Boolean).join(' ') || v[1]; }
+  var lab = v[2] ? '' : ' '+TRS[applied].abbr;
+  var q = pr ? '<q class="go" role="link" tabindex="0" data-read="'+readHash(pr)+'" title="Read the whole chapter">'+esc(vt)+'</q>' : '<q>'+esc(vt)+'</q>';
   var rb = pr ? '<button class="mini" data-read="'+readHash(pr)+'">Read chapter</button>' : '';
-  return '<div class="verse">'+q+'<div class="ref"><b>'+esc(v[0])+' KJV</b><span class="row">'+rb+'<button class="mini" data-fav="'+esc(id)+'" aria-pressed="'+fav+'">'+(fav?'Saved':'Save')+'</button><button class="mini" data-copy="'+esc(v[0]+' — '+v[1])+'">Copy</button></span></div></div>';
+  return '<div class="verse">'+q+'<div class="ref"><b>'+esc(v[0])+lab+'</b><span class="row">'+rb+'<button class="mini" data-fav="'+esc(id)+'" aria-pressed="'+fav+'">'+(fav?'Saved':'Save')+'</button><button class="mini" data-copy="'+esc(v[0]+lab+' — '+vt)+'">Copy</button></span></div></div>';
 }
 
 function detail(s){
@@ -429,12 +444,12 @@ function reader(slugName,ch,a,z){
   var idx = BIBLE.indexOf(b), prev=null, next=null;
   if(ch>1) prev = chapterHash(b,ch-1); else if(idx>0){ var pb=BIBLE[idx-1]; prev = chapterHash(pb,pb[1].length); }
   if(ch<b[1].length) next = chapterHash(b,ch+1); else if(idx<BIBLE.length-1) next = chapterHash(BIBLE[idx+1],1);
-  var h = '<div class="rd"><button class="back" id="back">← Back</button><div class="rd-head"><h2>'+esc(b[0])+' '+ch+'</h2><span class="row"><button class="mini" id="copych">Copy chapter</button></span></div><p class="hint" style="padding:0">King James Version'+(a?'. The verse you chose is highlighted.':'.')+'</p>';
-  b[1][ch-1].forEach(function(t,i){ var n=i+1, on = a && n>=a && n<=z; h += '<p'+(on?' class="hl" id="hl'+(n===a?'-first':'')+'"':'')+'><sup>'+n+'</sup>'+esc(t)+'</p>'; });
+  var h = '<div class="rd"><button class="back" id="back">← Back</button><div class="rd-head"><h2>'+esc(b[0])+' '+ch+'</h2><span class="row"><button class="mini" id="copych">Copy chapter</button></span></div><p class="hint" style="padding:0">'+esc(TRS[applied].name)+(a?'. The verse you chose is highlighted.':'.')+'</p>';
+  b[1][ch-1].forEach(function(t,i){ if(!t) return; var n=i+1, on = a && n>=a && n<=z; h += '<p'+(on?' class="hl" id="hl'+(n===a?'-first':'')+'"':'')+'><sup>'+n+'</sup>'+esc(t)+'</p>'; });
   h += '<div class="rd-nav">'+(prev?'<button class="mini" data-go="'+prev+'">← Previous chapter</button>':'')+(next?'<button class="mini" data-go="'+next+'">Next chapter →</button>':'')+'</div></div>';
   app.innerHTML = h;
   document.getElementById('back').addEventListener('click', goBack);
-  document.getElementById('copych').addEventListener('click', function(){ copyText(b[0]+' '+ch+' (KJV)\n'+b[1][ch-1].map(function(t,i){return (i+1)+' '+t;}).join('\n')); });
+  document.getElementById('copych').addEventListener('click', function(){ copyText(b[0]+' '+ch+' ('+TRS[applied].abbr+')\n'+b[1][ch-1].map(function(t,i){return t?(i+1)+' '+t:'';}).filter(Boolean).join('\n')); });
   var f = document.getElementById('hl-first');
   if(f){ try{ f.scrollIntoView({block:'center'}); }catch(e){ window.scrollTo(0,0);} } else window.scrollTo(0,0);
 }
@@ -475,6 +490,7 @@ app.addEventListener('click', function(e){
   var c = e.target.closest('[data-copy]'); if(c){ copyText(c.dataset.copy); }
 });
 app.addEventListener('keydown', function(e){ if((e.key==='Enter'||e.key===' ') && e.target.matches && e.target.matches('q.go')){ e.preventDefault(); location.hash = e.target.dataset.read; } });
+var trSel = document.getElementById('tr'); trSel.value = tr; trSel.addEventListener('change', function(){ setTr(trSel.value); });
 document.getElementById('tab-home').addEventListener('click', function(){ location.hash=''; route(); });
 document.getElementById('tab-favs').addEventListener('click', function(){ location.hash='saved'; });
 
