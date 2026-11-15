@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5f66">
+<meta name="description" content="Pick what you are facing and see what Scripture says to do. A SHE Series companion.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Living by the Bible">
+<title>Living by the Bible</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one calm column. Search and situation list on top, one situation open at a time with steps first, then verses. */
+:root{
+  --bg:#f3f5f6;
+  --surface:#ffffff;
+  --ink:#1b2a30;
+  --muted:#5b6b72;
+  --accent:#1f5f66;
+  --gold:#a8741a;
+  --line:#d8e0e3;
+  --accent-soft:#e1eef0;
+  --font-ui:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-verse:'Newsreader',Georgia,'Times New Roman',serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10191c;--surface:#182428;--ink:#e6eef0;--muted:#94a8ae;--accent:#6fc0c8;--gold:#e0b25a;--line:#2b3b40;--accent-soft:#1e3338;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10191c;--surface:#182428;--ink:#e6eef0;--muted:#94a8ae;--accent:#6fc0c8;--gold:#e0b25a;--line:#2b3b40;--accent-soft:#1e3338;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:16px;line-height:1.5}
+body{padding:0 16px 64px}
+.wrap{max-width:760px;margin:0 auto}
+header{padding:28px 0 12px;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--font-verse);font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.tag{color:var(--muted);font-size:14px;margin:4px 0 0}
+nav{display:flex;gap:8px}
+button,.btn{font:inherit;cursor:pointer}
+.tab{background:none;border:1px solid var(--line);color:var(--ink);padding:6px 12px;border-radius:999px;font-size:14px}
+.tab[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.search{display:flex;gap:8px;margin:12px 0 8px}
+.search input{flex:1;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.now{background:var(--accent);color:var(--bg);border:0;border-radius:10px;padding:0 16px;font-weight:700;white-space:nowrap}
+.hint{color:var(--muted);font-size:14px;margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:2px}
+.card:hover{border-color:var(--accent)}
+.card b{font-size:16px}
+.card span{font-size:13px;color:var(--muted)}
+.card.pin{border-color:var(--accent);background:var(--accent-soft)}
+.back{background:none;border:0;color:var(--accent);padding:8px 0;font-size:15px;font-weight:500}
+h2{font-family:var(--font-verse);font-size:28px;margin:4px 0 4px;text-wrap:balance}
+.when{color:var(--muted);margin:0 0 20px}
+h3{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold);margin:28px 0 10px}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.verse{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.verse q{display:block;quotes:none;font-family:var(--font-verse);font-size:20px;line-height:1.45;max-width:65ch}
+.verse .ref{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px;font-size:14px;color:var(--muted)}
+.verse .ref b{color:var(--ink)}
+.mini{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:4px 10px;font-size:13px}
+.mini[aria-pressed="true"]{background:var(--gold);color:#fff;border-color:var(--gold)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel textarea,.panel input[type=text]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-bottom:8px}
+.q{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0}
+.yn{display:flex;gap:6px}
+.yn button{border:1px solid var(--line);background:none;color:var(--ink);border-radius:8px;padding:4px 14px}
+.yn button[aria-pressed="true"].y{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.yn button[aria-pressed="true"].n{background:#a33a2f;color:#fff;border-color:#a33a2f}
+.result{margin-top:12px;padding:12px;border-radius:8px;background:var(--accent-soft)}
+.primary{background:var(--accent);color:var(--bg);border:0;border-radius:8px;padding:9px 16px;font-weight:700}
+.empty{color:var(--muted);padding:24px 0}
+.footer{margin-top:36px;color:var(--muted);font-size:13px;max-width:65ch}
+a{color:var(--accent)}
+body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Living by the Bible</h1>
+      <p class="tag">Pick what you are facing. See what God's Word says to do.</p>
+      <p class="tag"><a href="https://sheinherits.com" target="_blank" rel="noopener">A SHE Series companion</a></p>
+    </div>
+    <nav aria-label="Views">
+      <button class="tab" id="tab-home" aria-pressed="true">Situations</button>
+      <button class="tab" id="tab-favs" aria-pressed="false">Saved verses</button>
+    </nav>
+  </header>
+  <main id="app"></main>
+  <p class="footer">Scripture from the King James Version (public domain). Saved verses and your additions stay on this device only; nothing is sent anywhere. The "Do this" steps are short reminders written to go with the verses. They are not a substitute for reading the Bible, for church, or for counsel from a pastor or counselor. Part of the SHE Series at <a href="https://sheinherits.com" target="_blank" rel="noopener">sheinherits.com</a>. To install on your phone: open this page in your browser, then choose Add to Home Screen.</p>
+</div>
+<script>
+/* ---------- Content ---------- */
+var BASE = [
+{id:'thought-life',title:'Thought life',pin:true,when:'A thought is running that does not line up with Scripture.',
+ kw:'thoughts mind thinking imagination intrusive negative spiral lies captive renew',
+ steps:['Catch it. Name the thought out loud or write it down.','Test it against Philippians 4:8 with the thought check below.','Take it captive. Tell it no and hand it to Christ (2 Corinthians 10:5).','Replace it. Think on what is true, pure, lovely and of good report.','Pray. Ask God to search your heart, and thank Him for something specific.'],
+ verses:[['Philippians 4:8','Finally, brethren, whatsoever things are true, whatsoever things are honest, whatsoever things are just, whatsoever things are pure, whatsoever things are lovely, whatsoever things are of good report; if there be any virtue, and if there be any praise, think on these things.'],
+ ['2 Corinthians 10:5','Casting down imaginations, and every high thing that exalteth itself against the knowledge of God, and bringing into captivity every thought to the obedience of Christ;'],
+ ['Philippians 4:6-7','Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.'],
+ ['Romans 12:2','And be not conformed to this world: but be ye transformed by the renewing of your mind, that ye may prove what is that good, and acceptable, and perfect, will of God.'],
+ ['Colossians 3:2','Set your affection on things above, not on things on the earth.'],
+ ['Proverbs 4:23','Keep thy heart with all diligence; for out of it are the issues of life.'],
+ ['Isaiah 26:3','Thou wilt keep him in perfect peace, whose mind is stayed on thee: because he trusteth in thee.'],
+ ['Psalm 139:23-24','Search me, O God, and know my heart: try me, and know my thoughts: And see if there be any wicked way in me, and lead me in the way everlasting.'],
+ ['Psalm 19:14','Let the words of my mouth, and the meditation of my heart, be acceptable in thy sight, O LORD, my strength, and my redeemer.']]},
+{id:'anxiety',title:'Anxiety and worry',when:'You are worried about what might happen.',kw:'worry stress overwhelmed what if control future',
+ steps:['Stop and pray. Say the worry to God in plain words.','Add thanksgiving. Name three things He has already done.','Release it. Hand the outcome to Him (1 Peter 5:7).','Do only today\'s next step. Leave tomorrow alone.'],
+ verses:[['Philippians 4:6-7','Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God. And the peace of God, which passeth all understanding, shall keep your hearts and minds through Christ Jesus.'],
+ ['1 Peter 5:7','Casting all your care upon him; for he careth for you.'],
+ ['Matthew 6:33-34','But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you. Take therefore no thought for the morrow: for the morrow shall take thought for the things of itself. Sufficient unto the day is the evil thereof.'],
+ ['Proverbs 3:5-6','Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.'],
+ ['John 14:27','Peace I leave with you, my peace I give unto you: not as the world giveth, give I unto you. Let not your heart be troubled, neither let it be afraid.'],
+ ['Psalm 94:19','In the multitude of my thoughts within me thy comforts delight my soul.']]},
+{id:'fear',title:'Fear',when:'You are afraid of a person, a result or a loss.',kw:'afraid scared dread courage',
+ steps:['Say it plainly: "I am afraid of ___."','Remember who is with you.','Choose to trust Him in this moment (Psalm 56:3).','Take the one courageous step in front of you.'],
+ verses:[['2 Timothy 1:7','For God hath not given us the spirit of fear; but of power, and of love, and of a sound mind.'],
+ ['Isaiah 41:10','Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness.'],
+ ['Psalm 56:3','What time I am afraid, I will trust in thee.'],
+ ['Joshua 1:9','Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.'],
+ ['Psalm 23:4','Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.']]},
+{id:'anger',title:'Anger',when:'You are angry or about to say something sharp.',kw:'mad frustrated irritated wrath temper rage',
+ steps:['Pause before you speak. Be slow to wrath.','Do not let the day end with it still burning (Ephesians 4:26).','Answer softly, or say nothing yet.','Leave vengeance to God.'],
+ verses:[['James 1:19-20','Wherefore, my beloved brethren, let every man be swift to hear, slow to speak, slow to wrath: For the wrath of man worketh not the righteousness of God.'],
+ ['Ephesians 4:26-27','Be ye angry, and sin not: let not the sun go down upon your wrath: Neither give place to the devil.'],
+ ['Proverbs 15:1','A soft answer turneth away wrath: but grievous words stir up anger.'],
+ ['Proverbs 16:32','He that is slow to anger is better than the mighty; and he that ruleth his spirit than he that taketh a city.'],
+ ['Proverbs 29:11','A fool uttereth all his mind: but a wise man keepeth it in till afterwards.'],
+ ['Romans 12:19','Dearly beloved, avenge not yourselves, but rather give place unto wrath: for it is written, Vengeance is mine; I will repay, saith the Lord.']]},
+{id:'forgiveness',title:'Forgiveness and bitterness',when:'Someone hurt you and you keep replaying it.',kw:'resentment grudge offended hurt betrayed unforgiveness',
+ steps:['Admit the hurt to God.','Choose to forgive as Christ forgave you, even before you feel it.','Pray for the person (Luke 6:27-28).','Pull the root of bitterness out early (Hebrews 12:15).'],
+ verses:[['Ephesians 4:31-32','Let all bitterness, and wrath, and anger, and clamour, and evil speaking, be put away from you, with all malice: And be ye kind one to another, tenderhearted, forgiving one another, even as God for Christ\'s sake hath forgiven you.'],
+ ['Colossians 3:13','Forbearing one another, and forgiving one another, if any man have a quarrel against any: even as Christ forgave you, so also do ye.'],
+ ['Matthew 6:14-15','For if ye forgive men their trespasses, your heavenly Father will also forgive you: But if ye forgive not men their trespasses, neither will your Father forgive your trespasses.'],
+ ['Hebrews 12:15','Looking diligently lest any man fail of the grace of God; lest any root of bitterness springing up trouble you, and thereby defile many;'],
+ ['Luke 6:27-28','But I say unto you which hear, Love your enemies, do good to them which hate you, Bless them that curse you, and pray for them which despitefully use you.']]},
+{id:'conflict',title:'Conflict and difficult people',when:'You have a disagreement or someone is hard to deal with.',kw:'argument coworker family fight enemy peace',
+ steps:['Go to the person privately first (Matthew 18:15).','Do your part to live at peace (Romans 12:18).','Respond with good, not with evil.','Speak with grace.'],
+ verses:[['Matthew 18:15','Moreover if thy brother shall trespass against thee, go and tell him his fault between thee and him alone: if he shall hear thee, thou hast gained thy brother.'],
+ ['Romans 12:18','If it be possible, as much as lieth in you, live peaceably with all men.'],
+ ['Romans 12:21','Be not overcome of evil, but overcome evil with good.'],
+ ['Colossians 4:6','Let your speech be alway with grace, seasoned with salt, that ye may know how ye ought to answer every man.'],
+ ['Ephesians 4:2-3','With all lowliness and meekness, with longsuffering, forbearing one another in love; Endeavouring to keep the unity of the Spirit in the bond of peace.']]},
+{id:'temptation',title:'Temptation',when:'You are being pulled toward something you know is wrong.',kw:'sin purity lust flesh resist escape addiction',
+ steps:['Know you are not alone in this. It is common (1 Corinthians 10:13).','Look for the way of escape God provides, and take it.','Submit to God, then resist (James 4:7).','Flee. Do not negotiate.','Speak Scripture back (Psalm 119:11).'],
+ verses:[['1 Corinthians 10:13','There hath no temptation taken you but such as is common to man: but God is faithful, who will not suffer you to be tempted above that ye are able; but will with the temptation also make a way to escape, that ye may be able to bear it.'],
+ ['James 4:7','Submit yourselves therefore to God. Resist the devil, and he will flee from you.'],
+ ['Matthew 26:41','Watch and pray, that ye enter not into temptation: the spirit indeed is willing, but the flesh is weak.'],
+ ['Galatians 5:16','This I say then, Walk in the Spirit, and ye shall not fulfil the lust of the flesh.'],
+ ['Psalm 119:11','Thy word have I hid in mine heart, that I might not sin against thee.'],
+ ['Psalm 101:3','I will set no wicked thing before mine eyes:'],
+ ['Hebrews 4:15-16','For we have not an high priest which cannot be touched with the feeling of our infirmities; but was in all points tempted like as we are, yet without sin. Let us therefore come boldly unto the throne of grace, that we may obtain mercy, and find grace to help in time of need.']]},
+{id:'speech',title:'Words and gossip',when:'You are about to say something unkind, or repeat something you should not.',kw:'tongue gossip complain criticize slander speech mouth',
+ steps:['Stop before you speak. Ask if it is good and builds up.','Do not repeat it. A whisperer separates friends.','Ask God to guard your mouth.','Say less.'],
+ verses:[['Ephesians 4:29','Let no corrupt communication proceed out of your mouth, but that which is good to the use of edifying, that it may minister grace unto the hearers.'],
+ ['Proverbs 18:21','Death and life are in the power of the tongue: and they that love it shall eat the fruit thereof.'],
+ ['Psalm 141:3','Set a watch, O LORD, before my mouth; keep the door of my lips.'],
+ ['Proverbs 10:19','In the multitude of words there wanteth not sin: but he that refraineth his lips is wise.'],
+ ['Proverbs 16:28','A froward man soweth strife: and a whisperer separateth chief friends.'],
+ ['Matthew 12:36','But I say unto you, That every idle word that men shall speak, they shall give account thereof in the day of judgment.']]},
+{id:'comparison',title:'Comparison, envy and pride',when:'You are measuring yourself against someone, or feeling above them.',kw:'jealous jealousy envy compare pride ego humble',
+ steps:['Name it as envy or pride.','Rejoice with the person instead (Romans 12:15).','Examine your own work, not theirs (Galatians 6:4).','Humble yourself before God.'],
+ verses:[['Proverbs 14:30','A sound heart is the life of the flesh: but envy the rottenness of the bones.'],
+ ['James 3:16','For where envying and strife is, there is confusion and every evil work.'],
+ ['Galatians 6:4','But let every man prove his own work, and then shall he have rejoicing in himself alone, and not in another.'],
+ ['Romans 12:15','Rejoice with them that do rejoice, and weep with them that weep.'],
+ ['Philippians 2:3-4','Let nothing be done through strife or vainglory; but in lowliness of mind let each esteem other better than themselves. Look not every man on his own things, but every man also on the things of others.'],
+ ['Proverbs 16:18','Pride goeth before destruction, and an haughty spirit before a fall.'],
+ ['James 4:6','But he giveth more grace. Wherefore he saith, God resisteth the proud, but giveth grace unto the humble.'],
+ ['1 Peter 5:6','Humble yourselves therefore under the mighty hand of God, that he may exalt you in due time:']]},
+{id:'money',title:'Money, contentment and giving',when:'You are anxious about money, wanting more, or deciding how to give.',kw:'finances covet greed wealth spending generosity tithe budget',
+ steps:['Ask whose money this is. God owns it; you manage it.','Choose contentment with what you have.','Be faithful in the small things.','Give from the heart, not under pressure (2 Corinthians 9:7).','Trust Him to supply the need.'],
+ verses:[['Hebrews 13:5','Let your conversation be without covetousness; and be content with such things as ye have: for he hath said, I will never leave thee, nor forsake thee.'],
+ ['1 Timothy 6:6-8','But godliness with contentment is great gain. For we brought nothing into this world, and it is certain we can carry nothing out. And having food and raiment let us be therewith content.'],
+ ['Matthew 6:19-21','Lay not up for yourselves treasures upon earth, where moth and rust doth corrupt, and where thieves break through and steal: But lay up for yourselves treasures in heaven, where neither moth nor rust doth corrupt, and where thieves do not break through nor steal: For where your treasure is, there will your heart be also.'],
+ ['Proverbs 3:9-10','Honour the LORD with thy substance, and with the firstfruits of all thine increase: So shall thy barns be filled with plenty, and thy presses shall burst out with new wine.'],
+ ['2 Corinthians 9:7','Every man according as he purposeth in his heart, so let him give; not grudgingly, or of necessity: for God loveth a cheerful giver.'],
+ ['Luke 16:10-11','He that is faithful in that which is least is faithful also in much: and he that is unjust in the least is unjust also in much. If therefore ye have not been faithful in the unrighteous mammon, who will commit to your trust the true riches?'],
+ ['Philippians 4:19','But my God shall supply all your need according to his riches in glory by Christ Jesus.']]},
+{id:'integrity',title:'Integrity at work and in business',when:'You face a decision about honesty, accuracy or doing the job well.',kw:'work ethics honest accounting cfo cpa boss job shortcut truth',
+ steps:['Ask if it is honest and fair, not only whether it is allowed.','Do the work as for the Lord (Colossians 3:23).','Choose the integrity that guides, even when it costs.','Be faithful in what is least.'],
+ verses:[['Colossians 3:23-24','And whatsoever ye do, do it heartily, as to the Lord, and not unto men; Knowing that of the Lord ye shall receive the reward of the inheritance: for ye serve the Lord Christ.'],
+ ['Proverbs 11:3','The integrity of the upright shall guide them: but the perverseness of transgressors shall destroy them.'],
+ ['Proverbs 11:1','A false balance is abomination to the LORD: but a just weight is his delight.'],
+ ['Micah 6:8','He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?'],
+ ['Proverbs 14:23','In all labour there is profit: but the talk of the lips tendeth only to penury.']]},
+{id:'discouragement',title:'Discouragement',when:'You feel worn down, stuck or ready to quit.',kw:'tired weary down depressed hopeless give up burnout sad',
+ steps:['Talk to your own soul: "Hope in God."','Remember His mercies are new this morning.','Keep doing the good in front of you.','Wait on Him to renew your strength.'],
+ verses:[['Psalm 42:11','Why art thou cast down, O my soul? and why art thou disquieted within me? hope thou in God: for I shall yet praise him, who is the health of my countenance, and my God.'],
+ ['Lamentations 3:22-23','It is of the LORD\'s mercies that we are not consumed, because his compassions fail not. They are new every morning: great is thy faithfulness.'],
+ ['Galatians 6:9','And let us not be weary in well doing: for in due season we shall reap, if we faint not.'],
+ ['Isaiah 40:31','But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint.'],
+ ['2 Corinthians 4:16-17','For which cause we faint not; but though our outward man perish, yet the inward man is renewed day by day. For our light affliction, which is but for a moment, worketh for us a far more exceeding and eternal weight of glory;'],
+ ['Psalm 34:18','The LORD is nigh unto them that are of a broken heart; and saveth such as be of a contrite spirit.']]},
+{id:'suffering',title:'Trials, grief and loss',when:'You are in pain, or someone you love is.',kw:'suffering hard times sorrow death mourn comfort trouble',
+ steps:['Bring the pain to God without editing it.','Receive His comfort (2 Corinthians 1:3-4).','Hold on to what He is working in you.','Let others comfort you, and comfort others later.'],
+ verses:[['Psalm 46:1','God is our refuge and strength, a very present help in trouble.'],
+ ['2 Corinthians 1:3-4','Blessed be God, even the Father of our Lord Jesus Christ, the Father of mercies, and the God of all comfort; Who comforteth us in all our tribulation, that we may be able to comfort them which are in any trouble, by the comfort wherewith we ourselves are comforted of God.'],
+ ['Matthew 5:4','Blessed are they that mourn: for they shall be comforted.'],
+ ['James 1:2-4','My brethren, count it all joy when ye fall into divers temptations; Knowing this, that the trying of your faith worketh patience. But let patience have her perfect work, that ye may be perfect and entire, wanting nothing.'],
+ ['Romans 8:28','And we know that all things work together for good to them that love God, to them who are the called according to his purpose.'],
+ ['1 Thessalonians 4:13','But I would not have you to be ignorant, brethren, concerning them which are asleep, that ye sorrow not, even as others which have no hope.']]},
+{id:'decisions',title:'Decisions and guidance',when:'You need wisdom for a choice and do not know which way to go.',kw:'wisdom direction choose discernment will of god plan counsel',
+ steps:['Ask God for wisdom, believing He gives it.','Commit your plan to Him.','Seek godly counsel.','Check it against Scripture.','Act when you have peace, and keep trusting.'],
+ verses:[['James 1:5','If any of you lack wisdom, let him ask of God, that giveth to all men liberally, and upbraideth not; and it shall be given him.'],
+ ['Proverbs 3:5-6','Trust in the LORD with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths.'],
+ ['Proverbs 16:3','Commit thy works unto the LORD, and thy thoughts shall be established.'],
+ ['Proverbs 15:22','Without counsel purposes are disappointed: but in the multitude of counsellors they are established.'],
+ ['Psalm 32:8','I will instruct thee and teach thee in the way which thou shalt go: I will guide thee with mine eye.'],
+ ['Psalm 119:105','Thy word is a lamp unto my feet, and a light unto my path.']]},
+{id:'waiting',title:'Waiting and impatience',when:'You are waiting on God, or on a person, and it is taking too long.',kw:'patience delay timing slow',
+ steps:['Wait on the Lord, not on the outcome.','Do not fret over those who seem to be ahead.','Trust His timing.','Keep serving while you wait.'],
+ verses:[['Psalm 27:14','Wait on the LORD: be of good courage, and he shall strengthen thine heart: wait, I say, on the LORD.'],
+ ['Psalm 37:7','Rest in the LORD, and wait patiently for him: fret not thyself because of him who prospereth in his way, because of the man who bringeth wicked devices to pass.'],
+ ['Lamentations 3:25-26','The LORD is good unto them that wait for him, to the soul that seeketh him. It is good that a man should both hope and quietly wait for the salvation of the LORD.'],
+ ['Romans 8:25','But if we hope for that we see not, then do we with patience wait for it.'],
+ ['Ecclesiastes 3:11','He hath made every thing beautiful in his time:']]},
+{id:'rest',title:'Overwork and rest',when:'You are running on empty or cannot stop.',kw:'busy burnout sabbath sleep tired overwhelmed schedule',
+ steps:['Come to Jesus before you come to the to-do list.','Take His yoke. It is lighter than yours.','Step away for a while.','Receive rest as a gift.'],
+ verses:[['Matthew 11:28-30','Come unto me, all ye that labour and are heavy laden, and I will give you rest. Take my yoke upon you, and learn of me; for I am meek and lowly in heart: and ye shall find rest unto your souls. For my yoke is easy, and my burden is light.'],
+ ['Psalm 127:2','It is vain for you to rise up early, to sit up late, to eat the bread of sorrows: for so he giveth his beloved sleep.'],
+ ['Mark 6:31','And he said unto them, Come ye yourselves apart into a desert place, and rest a while: for there were many coming and going, and they had no leisure so much as to eat.']]},
+{id:'guilt',title:'Guilt, shame and failure',when:'You failed, and you are replaying it or feel condemned.',kw:'regret mistake condemned forgiven sin confess past',
+ steps:['Confess it plainly. Do not hide it.','Receive forgiveness. It is finished (1 John 1:9).','Refuse condemnation.','Forget what is behind and press on.'],
+ verses:[['1 John 1:9','If we confess our sins, he is faithful and just to forgive us our sins, and to cleanse us from all unrighteousness.'],
+ ['Romans 8:1','There is therefore now no condemnation to them which are in Christ Jesus, who walk not after the flesh, but after the Spirit.'],
+ ['Psalm 103:12','As far as the east is from the west, so far hath he removed our transgressions from us.'],
+ ['Proverbs 24:16','For a just man falleth seven times, and riseth up again: but the wicked shall fall into mischief.'],
+ ['Philippians 3:13-14','Brethren, I count not myself to have apprehended: but this one thing I do, forgetting those things which are behind, and reaching forth unto those things which are before, I press toward the mark for the prize of the high calling of God in Christ Jesus.']]},
+{id:'identity',title:'Self-worth and identity',when:'You feel not enough, or you are listening to what others say about you.',kw:'insecure worth value image confidence new creature',
+ steps:['Say what God says about you.','Remember you are His workmanship.','Live from who you are in Christ, not from your performance.'],
+ verses:[['Psalm 139:14','I will praise thee; for I am fearfully and wonderfully made: marvellous are thy works; and that my soul knoweth right well.'],
+ ['Ephesians 2:10','For we are his workmanship, created in Christ Jesus unto good works, which God hath before ordained that we should walk in them.'],
+ ['2 Corinthians 5:17','Therefore if any man be in Christ, he is a new creature: old things are passed away; behold, all things are become new.']]},
+{id:'loneliness',title:'Loneliness and rejection',when:'You feel left out, overlooked or alone.',kw:'alone abandoned lonely forsaken excluded',
+ steps:['Remember He is with you now.','Bring it to Him in prayer.','Reach out to one person today.'],
+ verses:[['Deuteronomy 31:6','Be strong and of a good courage, fear not, nor be afraid of them: for the LORD thy God, he it is that doth go with thee; he will not fail thee, nor forsake thee.'],
+ ['Psalm 27:10','When my father and my mother forsake me, then the LORD will take me up.'],
+ ['Matthew 28:20','and, lo, I am with you alway, even unto the end of the world. Amen.'],
+ ['Romans 8:38-39','For I am persuaded, that neither death, nor life, nor angels, nor principalities, nor powers, nor things present, nor things to come, Nor height, nor depth, nor any other creature, shall be able to separate us from the love of God, which is in Christ Jesus our Lord.']]},
+{id:'doubt',title:'Doubt and a dry spirit',when:'God feels far away, or your faith feels thin.',kw:'unbelief faith dry distant spiritual',
+ steps:['Be honest with God about it.','Ask Him to help your unbelief.','Get back into the Word. Faith comes by hearing.','Keep showing up.'],
+ verses:[['Mark 9:24','And straightway the father of the child cried out, and said with tears, Lord, I believe; help thou mine unbelief.'],
+ ['Romans 10:17','So then faith cometh by hearing, and hearing by the word of God.'],
+ ['Hebrews 11:1','Now faith is the substance of things hoped for, the evidence of things not seen.'],
+ ['Psalm 73:26','My flesh and my heart faileth: but God is the strength of my heart, and my portion for ever.']]},
+{id:'prayer',title:'Prayer',when:'You do not know what to pray, or you have stopped praying.',kw:'pray talk to god quiet time devotion',
+ steps:['Go to a quiet place and shut the door.','Ask. Seek. Knock.','Let the Spirit help when you have no words.','Pray again. Do not give up.'],
+ verses:[['Matthew 6:6','But thou, when thou prayest, enter into thy closet, and when thou hast shut thy door, pray to thy Father which is in secret; and thy Father which seeth in secret shall reward thee openly.'],
+ ['Matthew 7:7','Ask, and it shall be given you; seek, and ye shall find; knock, and it shall be opened unto you:'],
+ ['Romans 8:26','Likewise the Spirit also helpeth our infirmities: for we know not what we should pray for as we ought: but the Spirit itself maketh intercession for us with groanings which cannot be uttered.'],
+ ['1 Thessalonians 5:17','Pray without ceasing.'],
+ ['Luke 18:1','And he spake a parable unto them to this end, that men ought always to pray, and not to faint;']]},
+{id:'marriage-family',title:'Marriage and family',when:'You are handling something with your husband, children or grandchildren.',kw:'husband wife marriage children grandchildren parenting home love',
+ steps:['Choose love that is patient and kind.','Keep the peace, with humility and gentleness.','Speak with wisdom and kindness.','Teach the next generation as you go through the day.'],
+ verses:[['1 Corinthians 13:4-7','Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up, Doth not behave itself unseemly, seeketh not her own, is not easily provoked, thinketh no evil; Rejoiceth not in iniquity, but rejoiceth in the truth; Beareth all things, believeth all things, hopeth all things, endureth all things.'],
+ ['Ephesians 4:2-3','With all lowliness and meekness, with longsuffering, forbearing one another in love; Endeavouring to keep the unity of the Spirit in the bond of peace.'],
+ ['Proverbs 31:26','She openeth her mouth with wisdom; and in her tongue is the law of kindness.'],
+ ['Deuteronomy 6:6-7','And these words, which I command thee this day, shall be in thine heart: And thou shalt teach them diligently unto thy children, and shalt talk of them when thou sittest in thine house, and when thou walkest by the way, and when thou liest down, and when thou risest up.']]},
+{id:'gratitude',title:'Gratitude and joy',when:'You want to reset your heart, or you have good news to give thanks for.',kw:'thankful thanks praise rejoice happy blessing',
+ steps:['Name what God has done, out loud.','Give thanks in this circumstance too.','Let His peace rule your heart.'],
+ verses:[['1 Thessalonians 5:16-18','Rejoice evermore. Pray without ceasing. In every thing give thanks: for this is the will of God in Christ Jesus concerning you.'],
+ ['Philippians 4:4','Rejoice in the Lord alway: and again I say, Rejoice.'],
+ ['Psalm 118:24','This is the day which the LORD hath made; we will rejoice and be glad in it.'],
+ ['Psalm 103:2','Bless the LORD, O my soul, and forget not all his benefits:'],
+ ['Colossians 3:15','And let the peace of God rule in your hearts, to the which also ye are called in one body; and be ye thankful.']]}
+];
+
+var P48 = ['Is it true?','Is it honest and honorable?','Is it just and right?','Is it pure?','Is it lovely?','Is it of good report?'];
+
+/* ---------- Storage (this browser only) ---------- */
+var store = {favs:[], cv:{}, cs:[]};
+try { var raw = localStorage.getItem('lbb-v1'); if (raw) { var o = JSON.parse(raw); store.favs = o.favs||[]; store.cv = o.cv||{}; store.cs = o.cs||[]; } } catch(e){}
+function save(){ try { localStorage.setItem('lbb-v1', JSON.stringify(store)); } catch(e){} }
+
+/* ---------- Helpers ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function all(){ return BASE.concat(store.cs); }
+function byId(id){ var a = all(); for (var i=0;i<a.length;i++) if (a[i].id===id) return a[i]; return null; }
+function versesOf(s){ return (s.verses||[]).concat((store.cv[s.id]||[]).map(function(v){return [v.ref,v.text,true];})); }
+function vid(sid,ref){ return sid+'|'+ref; }
+function toast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; t.setAttribute('role','status'); document.body.appendChild(t); setTimeout(function(){t.remove();},1600); }
+function copyText(txt){
+  var ok=false;
+  try { navigator.clipboard.writeText(txt).then(function(){toast('Copied');},function(){toast('Press and hold the text to copy');}); ok=true; } catch(e){}
+  if(!ok) toast('Press and hold the text to copy');
+}
+var app = document.getElementById('app');
+var query = '';
+
+/* ---------- Views ---------- */
+function home(){
+  setTabs('home');
+  var q = query.trim().toLowerCase();
+  var list = all().filter(function(s){
+    if(!q) return true;
+    var hay = (s.title+' '+(s.when||'')+' '+(s.kw||'')+' '+versesOf(s).map(function(v){return v[0]+' '+v[1];}).join(' ')).toLowerCase();
+    return q.split(/\s+/).every(function(w){return hay.indexOf(w)>-1;});
+  });
+  var h = '<div class="search"><input id="q" type="search" placeholder="What are you facing? (anger, money, worry, thoughts…)" aria-label="Search situations and verses" value="'+esc(query)+'"><button class="now" id="rand">Verse now</button></div>';
+  h += '<p class="hint">Tap a situation to see what to do and what Scripture says.</p>';
+  if(!list.length) h += '<p class="empty">Nothing matches. Try a different word, or add this as your own situation below.</p>';
+  h += '<div class="grid">';
+  list.forEach(function(s){
+    h += '<button class="card'+(s.pin?' pin':'')+'" data-go="'+esc(s.id)+'"><b>'+esc(s.title)+'</b><span>'+esc(s.when||'')+'</span></button>';
+  });
+  h += '</div>';
+  h += '<h3>Add your own situation</h3><div class="panel"><input type="text" id="ns-title" placeholder="Situation title (for example, Hard conversations)" aria-label="Situation title"><input type="text" id="ns-when" placeholder="When it applies (optional)" aria-label="When it applies"><button class="primary" id="ns-add">Add situation</button></div>';
+  app.innerHTML = h;
+  var qi = document.getElementById('q');
+  qi.addEventListener('input', function(){ query = qi.value; var pos = qi.selectionStart; home(); var n=document.getElementById('q'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
+  document.getElementById('rand').addEventListener('click', randomVerse);
+  document.getElementById('ns-add').addEventListener('click', function(){
+    var t = document.getElementById('ns-title').value.trim();
+    if(!t){ toast('Enter a title first'); return; }
+    var id = 'c-'+Date.now();
+    store.cs.push({id:id,title:t,when:document.getElementById('ns-when').value.trim(),steps:[],verses:[],custom:true});
+    save(); location.hash = id;
+  });
+}
+
+function verseHTML(sid,v){
+  var id = vid(sid,v[0]); var fav = store.favs.indexOf(id)>-1;
+  return '<div class="verse"><q>'+esc(v[1])+'</q><div class="ref"><b>'+esc(v[0])+' KJV</b><span class="row"><button class="mini" data-fav="'+esc(id)+'" aria-pressed="'+fav+'">'+(fav?'Saved':'Save')+'</button><button class="mini" data-copy="'+esc(v[0]+' — '+v[1])+'">Copy</button></span></div></div>';
+}
+
+function detail(s){
+  setTabs('');
+  var h = '<button class="back" id="back">← All situations</button><h2>'+esc(s.title)+'</h2><p class="when">'+esc(s.when||'')+'</p>';
+  if(s.id==='thought-life'){
+    h += '<h3>Thought check (Philippians 4:8)</h3><div class="panel"><textarea id="tc-text" rows="2" placeholder="Type the thought (optional)" aria-label="The thought"></textarea><div id="tc-qs">';
+    P48.forEach(function(q,i){ h += '<div class="q"><span>'+esc(q)+'</span><span class="yn"><button class="y" data-q="'+i+'" data-a="1" aria-pressed="false">Yes</button><button class="n" data-q="'+i+'" data-a="0" aria-pressed="false">No</button></span></div>'; });
+    h += '</div><div id="tc-res" class="result" hidden></div></div>';
+  }
+  if(s.steps && s.steps.length){ h += '<h3>Do this</h3><ol class="steps">'+s.steps.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ol>'; }
+  h += '<h3>What the Bible says</h3>';
+  var vs = versesOf(s);
+  if(!vs.length) h += '<p class="empty">No verses yet. Add one below.</p>';
+  vs.forEach(function(v){ h += verseHTML(s.id,v); });
+  h += '<h3>Add a verse or note</h3><div class="panel"><input type="text" id="av-ref" placeholder="Reference (for example, Psalm 121:1-2)" aria-label="Reference"><textarea id="av-text" rows="3" placeholder="Verse text or your note" aria-label="Verse text or note"></textarea><button class="primary" id="av-add">Add to this situation</button></div>';
+  if(s.custom) h += '<p><button class="mini" id="del-s">Delete this situation</button></p>';
+  app.innerHTML = h; window.scrollTo(0,0);
+  document.getElementById('back').addEventListener('click', function(){ location.hash=''; });
+  document.getElementById('av-add').addEventListener('click', function(){
+    var ref = document.getElementById('av-ref').value.trim(), text = document.getElementById('av-text').value.trim();
+    if(!ref || !text){ toast('Add a reference and text'); return; }
+    (store.cv[s.id] = store.cv[s.id]||[]).push({ref:ref,text:text}); save(); detail(s);
+  });
+  var del = document.getElementById('del-s');
+  if(del) del.addEventListener('click', function(){ store.cs = store.cs.filter(function(x){return x.id!==s.id;}); delete store.cv[s.id]; save(); location.hash=''; });
+  if(s.id==='thought-life') thoughtCheck();
+}
+
+function thoughtCheck(){
+  var ans = {};
+  var qs = document.getElementById('tc-qs'), res = document.getElementById('tc-res');
+  qs.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-q]'); if(!b) return;
+    ans[b.dataset.q] = b.dataset.a;
+    Array.prototype.forEach.call(qs.querySelectorAll('button[data-q="'+b.dataset.q+'"]'), function(x){ x.setAttribute('aria-pressed', x===b ? 'true':'false'); });
+    var answered = Object.keys(ans).length;
+    var noCount = Object.keys(ans).filter(function(k){return ans[k]==='0';}).length;
+    if(!answered){ res.hidden = true; return; }
+    res.hidden = false;
+    if(noCount){
+      res.innerHTML = '<b>Take it captive.</b> This thought fails '+noCount+' of the '+answered+' tests you have answered. Tell it no, hand it to Christ (2 Corinthians 10:5), then think on something true, pure and lovely. Pray and give thanks (Philippians 4:6).';
+    } else if(answered<P48.length){
+      res.textContent = 'Keep going. Answer the rest of the questions.';
+    } else {
+      res.innerHTML = '<b>It passes.</b> Keep thinking on these things, and keep it before God in prayer.';
+    }
+  });
+}
+
+function favs(){
+  setTabs('favs');
+  var h = '<h2>Saved verses</h2>';
+  var n = 0;
+  all().forEach(function(s){ versesOf(s).forEach(function(v){ if(store.favs.indexOf(vid(s.id,v[0]))>-1){ n++; h += '<p class="hint"><a href="#'+esc(s.id)+'">'+esc(s.title)+'</a></p>'+verseHTML(s.id,v); } }); });
+  if(!n) h += '<p class="empty">Tap Save on any verse to keep it here.</p>';
+  app.innerHTML = h;
+}
+
+function randomVerse(){
+  var pool = []; all().forEach(function(s){ versesOf(s).forEach(function(v){ pool.push([s,v]); }); });
+  var pick = pool[Math.floor(Math.random()*pool.length)];
+  var h = '<button class="back" id="back">← All situations</button><h2>A verse for now</h2><p class="hint">From: <a href="#'+esc(pick[0].id)+'">'+esc(pick[0].title)+'</a></p>'+verseHTML(pick[0].id,pick[1])+'<p><button class="primary" id="again">Another verse</button></p>';
+  app.innerHTML = h; setTabs('');
+  document.getElementById('back').addEventListener('click', function(){ location.hash=''; route(); });
+  document.getElementById('again').addEventListener('click', randomVerse);
+}
+
+function setTabs(w){
+  document.getElementById('tab-home').setAttribute('aria-pressed', w==='home');
+  document.getElementById('tab-favs').setAttribute('aria-pressed', w==='favs');
+}
+
+/* ---------- Events and routing ---------- */
+app.addEventListener('click', function(e){
+  var g = e.target.closest('[data-go]'); if(g){ location.hash = g.dataset.go; return; }
+  var f = e.target.closest('[data-fav]');
+  if(f){ var id=f.dataset.fav, i=store.favs.indexOf(id); if(i>-1) store.favs.splice(i,1); else store.favs.push(id); save();
+    var on = store.favs.indexOf(id)>-1; f.setAttribute('aria-pressed',on); f.textContent = on?'Saved':'Save';
+    if(location.hash==='#saved' && !on) favs(); return; }
+  var c = e.target.closest('[data-copy]'); if(c){ copyText(c.dataset.copy); }
+});
+document.getElementById('tab-home').addEventListener('click', function(){ location.hash=''; route(); });
+document.getElementById('tab-favs').addEventListener('click', function(){ location.hash='saved'; });
+
+function route(){
+  var h = location.hash.replace('#','');
+  if(h==='saved') return favs();
+  var s = h && byId(h);
+  if(s) return detail(s);
+  home();
+}
+window.addEventListener('hashchange', route);
+route();
+if ('serviceWorker' in navigator && location.protocol.indexOf('http')===0) { window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); }); }
+</script>
+</body>
+</html>

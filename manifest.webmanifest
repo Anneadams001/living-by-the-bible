@@ -1,0 +1,15 @@
+{
+  "name": "Living by the Bible",
+  "short_name": "Living by the Bible",
+  "description": "Pick what you are facing and see what Scripture says to do.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f5f6",
+  "theme_color": "#1f5f66",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
